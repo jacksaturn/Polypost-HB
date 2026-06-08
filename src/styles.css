@@ -730,11 +730,19 @@ h2 {
 
 .draft-item {
   display: grid;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
   background: #fff;
+}
+
+.draft-item-main {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1.2fr);
+  gap: 12px;
+  align-items: start;
 }
 
 .draft-item strong,
@@ -746,9 +754,34 @@ h2 {
   color: var(--ink);
 }
 
+.draft-preview {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #334155;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .draft-item-actions {
   display: flex;
+  align-items: start;
   gap: 8px;
+}
+
+.draft-restore {
+  border-color: rgba(10, 102, 194, 0.42) !important;
+  color: var(--linkedin-blue-dark) !important;
+}
+
+.draft-delete {
+  border-color: rgba(180, 35, 24, 0.48) !important;
+  color: var(--danger) !important;
+}
+
+.draft-delete:hover,
+.draft-delete:focus-visible {
+  background: #fff1f0 !important;
 }
 
 .draft-empty {

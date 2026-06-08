@@ -54,10 +54,11 @@ function App() {
   function handleSaveDraftSnapshot(title: string) {
     const result = saveDraftSnapshot(document, title, characterSummary.count);
 
-    setStorageNotice(result.message);
-
     if (result.ok) {
       setDraftHistory(loadDraftHistory());
+      setStorageNotice(null);
+    } else {
+      setStorageNotice(result.message);
     }
   }
 
@@ -71,16 +72,18 @@ function App() {
 
     setDocument(draft.document);
     setEditorVersion((version) => version + 1);
-    setStorageNotice(`Restored "${draft.title}".`);
+    setStorageNotice(null);
     setCopyStatus({ state: 'idle', message: '' });
   }
 
   function handleDeleteDraftSnapshot(id: string) {
     const result = deleteDraftSnapshot(id);
-    setStorageNotice(result.message);
 
     if (result.ok) {
       setDraftHistory(loadDraftHistory());
+      setStorageNotice(null);
+    } else {
+      setStorageNotice(result.message);
     }
   }
 

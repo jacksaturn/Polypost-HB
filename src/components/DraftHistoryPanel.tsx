@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import type { EditorNode } from '../lib/exportLinkedInText';
 import type { DraftSnapshot } from '../lib/storage';
 
 interface DraftHistoryPanelProps {
@@ -10,7 +11,7 @@ interface DraftHistoryPanelProps {
 }
 
 export function DraftHistoryPanel({ drafts, onDelete, onRestore, onSave }: DraftHistoryPanelProps) {
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(createDefaultTitle);
 
   function handleSave() {
     const trimmed = title.trim();
@@ -20,7 +21,7 @@ export function DraftHistoryPanel({ drafts, onDelete, onRestore, onSave }: Draft
     }
 
     onSave(trimmed);
-    setTitle('');
+    setTitle(createDefaultTitle());
   }
 
   return (
@@ -45,17 +46,20 @@ export function DraftHistoryPanel({ drafts, onDelete, onRestore, onSave }: Draft
         <ul className="draft-list">
           {drafts.map((draft) => (
             <li key={draft.id} className="draft-item">
-              <div>
-                <strong>{draft.title}</strong>
-                <span>
-                  {draft.characterCount.toLocaleString()} chars · {new Date(draft.updatedAt).toLocaleString()}
-                </span>
+              <div className="draft-item-main">
+                <div>
+                  <strong>{draft.title}</strong>
+                  <span>
+                    {draft.characterCount.toLocaleString()} chars · {new Date(draft.updatedAt).toLocaleString()}
+                  </span>
+                </div>
+                <p className="draft-preview">{getDraftPreview(draft.document)}</p>
               </div>
               <div className="draft-item-actions">
-                <button type="button" onClick={() => onRestore(draft)}>
+                <button type="button" className="draft-restore" onClick={() => onRestore(draft)}>
                   Restore
                 </button>
-                <button type="button" onClick={() => onDelete(draft.id)}>
+                <button type="button" className="draft-delete" onClick={() => onDelete(draft.id)}>
                   Delete
                 </button>
               </div>
@@ -67,4 +71,21 @@ export function DraftHistoryPanel({ drafts, onDelete, onRestore, onSave }: Draft
       )}
     </details>
   );
+}
+
+function createDefaultTitle() {
+  return `Draft ${new Date().toLocaleString()}`;
+}
+
+function getDraftPreview(document: EditorNode) {
+  const text = flattenText(document).replace(/\s+/g, ' ').trim();
+  return text ? text.slice(0, 140) : 'Empty draft';
+}
+
+function flattenText(node: EditorNode): string {
+  if (node.text) {
+    return node.text;
+  }
+
+  return (node.content ?? []).map(flattenText).join(' ');
 }
