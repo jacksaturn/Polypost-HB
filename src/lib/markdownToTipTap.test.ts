@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { looksLikeMarkdown, markdownToTipTap } from './markdownToTipTap';
+import { looksLikeMarkdown, markdownToTipTap, plainTextToTipTap } from './markdownToTipTap';
 
 describe('looksLikeMarkdown', () => {
   it('detects common markdown markers', () => {
@@ -89,6 +89,38 @@ describe('markdownToTipTap', () => {
             { type: 'hardBreak' },
             { type: 'text', text: 'npm test', marks: [{ type: 'code' }] },
           ],
+        },
+      ],
+    });
+  });
+
+  it('skips raw HTML image blocks from GitHub-style markdown', () => {
+    expect(markdownToTipTap('# Title\n\n<p align="center">\n  <img src="docs/screenshot.png" alt="Screenshot">\n</p>\n\nAfter image')).toEqual({
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Title' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'After image' }] },
+      ],
+    });
+  });
+});
+
+describe('plainTextToTipTap', () => {
+  it('converts paragraphs and single line breaks without parsing markdown marks', () => {
+    expect(plainTextToTipTap('First line\nSecond line\n\n**Plain**, not bold')).toEqual({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'First line' },
+            { type: 'hardBreak' },
+            { type: 'text', text: 'Second line' },
+          ],
+        },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: '**Plain**, not bold' }],
         },
       ],
     });

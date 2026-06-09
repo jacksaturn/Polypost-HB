@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/react';
 import {
   Bold,
   Code2,
+  FileUp,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -18,10 +19,12 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+import { getAcceptedDocumentTypes } from '../lib/importDocument';
 import { EmojiPicker } from './EmojiPicker';
 
 interface ToolbarProps {
   editor: Editor | null;
+  onImportFile: (file: File) => void | Promise<void>;
   onReset: () => void;
 }
 
@@ -34,7 +37,7 @@ interface ToolButtonProps {
   onClick: () => void;
 }
 
-export function Toolbar({ editor, onReset }: ToolbarProps) {
+export function Toolbar({ editor, onImportFile, onReset }: ToolbarProps) {
   function run(command: () => boolean) {
     if (!editor) {
       return;
@@ -72,6 +75,16 @@ export function Toolbar({ editor, onReset }: ToolbarProps) {
     }
 
     editor.chain().focus().insertContent(emoji).run();
+  }
+
+  function handleImportChange(event: React.ChangeEvent<HTMLInputElement> | React.FormEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+
+    if (file) {
+      void onImportFile(file);
+    }
+
+    event.currentTarget.value = '';
   }
 
   return (
@@ -181,8 +194,22 @@ export function Toolbar({ editor, onReset }: ToolbarProps) {
           />
         </div>
 
-        <div className="toolbar-group toolbar-group-push" aria-label="Draft actions">
+        <div className="toolbar-group" aria-label="Insert">
           <EmojiPicker disabled={!editor} onSelect={insertEmoji} />
+        </div>
+
+        <div className="toolbar-group toolbar-group-push" aria-label="Draft actions">
+          <div className={`import-button${!editor ? ' is-disabled' : ''}`} title="Upload text, Markdown, or Word document">
+            <FileUp aria-hidden="true" size={15} strokeWidth={2.2} />
+            <input
+              type="file"
+              aria-label="Upload text, Markdown, or Word document"
+              accept={getAcceptedDocumentTypes()}
+              disabled={!editor}
+              onInput={handleImportChange}
+              onChange={handleImportChange}
+            />
+          </div>
           <ToolButton label="Reset draft" icon={Trash2} disabled={!editor} onClick={onReset} />
         </div>
       </div>

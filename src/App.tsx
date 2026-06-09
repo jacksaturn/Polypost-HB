@@ -36,6 +36,20 @@ function App() {
     }
   }
 
+  function handleReplaceDocument(nextDocument: EditorNode) {
+    const result = saveDraft(nextDocument);
+
+    if (!result.ok) {
+      setStorageNotice(result.message);
+      return;
+    }
+
+    setDocument(nextDocument);
+    setEditorVersion((version) => version + 1);
+    setStorageNotice(null);
+    setCopyStatus({ state: 'idle', message: '' });
+  }
+
   async function handleCopy() {
     try {
       await copyPlainText(exportedText);
@@ -153,6 +167,7 @@ function App() {
               onFeedCutoffChange={setShowFeedCutoff}
               onFeedPreviewModeChange={handleFeedPreviewModeChange}
               onDocumentChange={handleDocumentChange}
+              onReplaceDocument={handleReplaceDocument}
               onReset={handleReset}
             />
             <CopyPanel disabled={!exportedText} status={copyStatus} onCopy={handleCopy} onCopyAndOpenLinkedIn={handleCopyAndOpenLinkedIn} />

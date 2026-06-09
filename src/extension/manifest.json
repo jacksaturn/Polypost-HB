@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Post Formatter",
+  "version": "0.1.4",
+  "description": "Draft LinkedIn posts with rich formatting and insert LinkedIn-ready Unicode text into the composer.",
+  "permissions": ["clipboardWrite", "scripting", "storage"],
+  "host_permissions": ["https://www.linkedin.com/*", "https://*.linkedin.com/*"],
+  "action": {
+    "default_title": "Show LinkedIn Post Formatter"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*", "https://*.linkedin.com/*"],
+      "js": ["content-script.js"],
+      "css": ["style.css"],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_origin_as_fallback": true
+    }
+  ]
+}

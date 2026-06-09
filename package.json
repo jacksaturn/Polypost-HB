@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -b && vite build",
+    "build:extension": "tsc -b && vite build --config vite.extension.config.ts",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -19,6 +20,8 @@
     "@tiptap/react": "^2.27.1",
     "@tiptap/starter-kit": "^2.27.1",
     "lucide-react": "^0.475.0",
+    "mammoth": "^1.12.0",
+    "marked": "^18.0.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

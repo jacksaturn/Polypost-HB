@@ -56,9 +56,21 @@ function renderBlocks(nodes: EditorNode[]): string {
     }
 
     const previous = renderedBlocks[index - 1];
-    const separator = previous.node.type === 'horizontalRule' || block.node.type === 'horizontalRule' ? '\n' : '\n\n';
+    const separator = getBlockSeparator(previous.node, block.node);
     return `${output}${separator}${block.text}`;
   }, '');
+}
+
+function getBlockSeparator(previous: EditorNode, current: EditorNode): string {
+  if (previous.type === 'horizontalRule' || current.type === 'horizontalRule') {
+    return '\n';
+  }
+
+  if (previous.type === 'heading' && (current.type === 'bulletList' || current.type === 'orderedList')) {
+    return '\n';
+  }
+
+  return '\n\n';
 }
 
 function trimPlainWhitespace(text: string): string {

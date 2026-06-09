@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { generateJSON } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -6,9 +8,10 @@ import { Slice } from '@tiptap/pm/model';
 import { EditorContent, useEditor, type JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-import { LINKEDIN_POST_CHARACTER_LIMIT } from '../lib/constants';
 import type { EditorNode } from '../lib/exportLinkedInText';
+import { importDocumentFile } from '../lib/importDocument';
 import { looksLikeMarkdown, markdownToTipTap } from '../lib/markdownToTipTap';
+import { sanitizePastedHTML } from '../lib/pastedHtml';
 import { isFeedCutoffLikely, type FeedPreviewMode } from '../lib/feedPreview';
 import { Toolbar } from './Toolbar';
 
@@ -20,6 +23,7 @@ interface EditorShellProps {
   onFeedCutoffChange: (showFeedCutoff: boolean) => void;
   onFeedPreviewModeChange: (mode: FeedPreviewMode | null) => void;
   onDocumentChange: (document: EditorNode) => void;
+  onReplaceDocument: (document: EditorNode) => void;
   onReset: () => void;
 }
 
@@ -44,9 +48,7 @@ const extensions = [
   Placeholder.configure({
     placeholder: 'Paste or write your LinkedIn post draft...',
   }),
-  CharacterCount.configure({
-    limit: LINKEDIN_POST_CHARACTER_LIMIT,
-  }),
+  CharacterCount,
 ];
 
 export function EditorShell({
@@ -57,8 +59,10 @@ export function EditorShell({
   onFeedCutoffChange,
   onDocumentChange,
   onFeedPreviewModeChange,
+  onReplaceDocument,
   onReset,
 }: EditorShellProps) {
+  const [isDragActive, setIsDragActive] = useState(false);
   const editor = useEditor({
     extensions,
     content: initialContent as JSONContent,
@@ -68,11 +72,7 @@ export function EditorShell({
         class: 'rich-editor-content',
       },
       transformPastedHTML(html) {
-        return html
-          .replace(/<style[\s\S]*?<\/style>/gi, '')
-          .replace(/<script[\s\S]*?<\/script>/gi, '')
-          .replace(/<table[\s\S]*?<\/table>/gi, '')
-          .replace(/<img[^>]*>/gi, '');
+        return sanitizePastedHTML(html);
       },
       handlePaste(view, event) {
         const plainText = event.clipboardData?.getData('text/plain') ?? '';
@@ -97,9 +97,72 @@ export function EditorShell({
     },
   });
 
+  async function handleImportFile(file: File) {
+    if (!editor) {
+      return;
+    }
+
+    try {
+      const importedDocument = await importDocumentFile(file);
+      const nextDocument = importedDocument.format === 'html'
+        ? (generateJSON(importedDocument.html, extensions) as EditorNode)
+        : (editor.schema.nodeFromJSON(importedDocument.document).toJSON() as EditorNode);
+
+      onReplaceDocument(nextDocument);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function handleEditorDragOver(event: React.DragEvent<HTMLDivElement>) {
+    if (!event.dataTransfer.types.includes('Files')) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setIsDragActive(true);
+  }
+
+  function handleEditorDragLeave(event: React.DragEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsDragActive(false);
+    }
+  }
+
+  function handleEditorDrop(event: React.DragEvent<HTMLDivElement>) {
+    const file = event.dataTransfer.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    event.preventDefault();
+    setIsDragActive(false);
+    void handleImportFile(file);
+  }
+
+  function handleEditorMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement) || !editor) {
+      return;
+    }
+
+    const editorElement = event.currentTarget.querySelector<HTMLElement>('.rich-editor-content');
+
+    if (target.closest('a, button, input, textarea, select')) {
+      return;
+    }
+
+    if (target === event.currentTarget || target === editorElement) {
+      editor.commands.focus('end');
+    }
+  }
+
   return (
     <div className="editor-shell">
-      <Toolbar editor={editor} onReset={onReset} />
+      <Toolbar editor={editor} onImportFile={handleImportFile} onReset={onReset} />
       <div className="editor-preview-controls" aria-label="Editor preview width">
         <span>View</span>
         <PreviewModeButton active={feedPreviewMode === null} label="Editor" onClick={() => onFeedPreviewModeChange(null)} />
@@ -113,7 +176,13 @@ export function EditorShell({
           onClick={() => onFeedCutoffChange(!showFeedCutoff)}
         />
       </div>
-      <div className={`editor-frame${feedPreviewMode ? ` is-feed-preview is-${feedPreviewMode}` : ''}`}>
+      <div
+        className={`editor-frame${feedPreviewMode ? ` is-feed-preview is-${feedPreviewMode}` : ''}${isDragActive ? ' is-drag-active' : ''}`}
+        onDragOver={handleEditorDragOver}
+        onDragLeave={handleEditorDragLeave}
+        onDrop={handleEditorDrop}
+        onMouseDown={handleEditorMouseDown}
+      >
         {feedPreviewMode ? (
           <div className="feed-editor-card">
             <FeedEditorHeader />

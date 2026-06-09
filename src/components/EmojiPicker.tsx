@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { Smile } from 'lucide-react';
 
 import { searchEmojis } from '../lib/emojiData';
 
@@ -38,13 +39,12 @@ export function EmojiPicker({ disabled, onSelect }: EmojiPickerProps) {
         className="tool-button emoji-menu-button"
         aria-label="Insert emoji"
         aria-haspopup="dialog"
-        aria-expanded={isOpen}
         disabled={disabled}
         title="Insert emoji"
         onMouseDown={(event) => event.preventDefault()}
         onClick={toggleMenu}
       >
-        😀
+        <Smile aria-hidden="true" size={17} strokeWidth={2.1} />
       </button>
       {isOpen ? (
         <div className="emoji-menu-popover" role="dialog" aria-label="Choose emoji">

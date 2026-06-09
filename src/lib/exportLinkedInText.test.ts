@@ -53,6 +53,18 @@ describe('exportLinkedInText', () => {
     expect(exportLinkedInText(document)).toBe(styleText('Launch notes', { bold: true }));
   });
 
+  it('does not add a blank pasted line between a heading and following list', () => {
+    const document = doc([
+      { type: 'heading', attrs: { level: 3 }, content: [text('Features')] },
+      {
+        type: 'bulletList',
+        content: [{ type: 'listItem', content: [paragraph([text('TipTap rich text editor')])] }],
+      },
+    ]);
+
+    expect(exportLinkedInText(document)).toBe(`${styleText('Features', { bold: true })}\n• TipTap rich text editor`);
+  });
+
   it('exports underline as combining underline text', () => {
     const document = doc([paragraph([text('Underlined', [{ type: 'underline' }])])]);
 

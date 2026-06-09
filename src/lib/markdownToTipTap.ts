@@ -6,9 +6,24 @@ const HEADING_PATTERN = /^\s{0,3}(#{1,6})\s+(.+)$/;
 const BULLET_PATTERN = /^\s*[-+*]\s+(.+)$/;
 const ORDERED_PATTERN = /^\s*(\d+)\.\s+(.+)$/;
 const BLOCKQUOTE_PATTERN = /^\s*>\s?(.*)$/;
+const HTML_BLOCK_PATTERN = /^\s*<\/?[a-z][^>]*>\s*$/i;
+const MARKDOWN_IMAGE_PATTERN = /^\s*!\[[^\]]*\]\([^)]+\)\s*$/;
 
 export function looksLikeMarkdown(text: string): boolean {
   return /(^\s{0,3}(#{1,6}|[-+*]|\d+\.|>)\s+|`[^`]+`|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|~~[^~]+~~|__[^_]+__|^\s{0,3}[-*_]{3,}\s*$)/m.test(text);
+}
+
+export function plainTextToTipTap(text: string): EditorNode {
+  const paragraphs = text
+    .replace(/\r\n?/g, '\n')
+    .split(/\n{2,}/)
+    .map((paragraphText) => paragraphText.trim())
+    .filter(Boolean);
+
+  return {
+    type: 'doc',
+    content: paragraphs.map((paragraphText) => paragraphFromPlainText(paragraphText)),
+  };
 }
 
 export function markdownToTipTap(markdown: string): EditorNode {
@@ -20,6 +35,11 @@ export function markdownToTipTap(markdown: string): EditorNode {
     const line = lines[index];
 
     if (!line.trim()) {
+      index += 1;
+      continue;
+    }
+
+    if (HTML_BLOCK_PATTERN.test(line) || MARKDOWN_IMAGE_PATTERN.test(line)) {
       index += 1;
       continue;
     }
@@ -131,7 +151,7 @@ export function markdownToTipTap(markdown: string): EditorNode {
 }
 
 function isBlockStart(line: string): boolean {
-  return HORIZONTAL_RULE_PATTERN.test(line) || FENCED_CODE_PATTERN.test(line) || HEADING_PATTERN.test(line) || BULLET_PATTERN.test(line) || ORDERED_PATTERN.test(line) || BLOCKQUOTE_PATTERN.test(line);
+  return HORIZONTAL_RULE_PATTERN.test(line) || FENCED_CODE_PATTERN.test(line) || HEADING_PATTERN.test(line) || BULLET_PATTERN.test(line) || ORDERED_PATTERN.test(line) || BLOCKQUOTE_PATTERN.test(line) || HTML_BLOCK_PATTERN.test(line) || MARKDOWN_IMAGE_PATTERN.test(line);
 }
 
 function listItem(text: string): EditorNode {
@@ -140,6 +160,16 @@ function listItem(text: string): EditorNode {
 
 function paragraph(text: string): EditorNode {
   return { type: 'paragraph', content: parseInlineMarks(text) };
+}
+
+function paragraphFromPlainText(text: string): EditorNode {
+  const lines = text.split('\n');
+  const content = lines.flatMap((line, index): EditorNode[] => {
+    const nodes: EditorNode[] = index === 0 ? [] : [{ type: 'hardBreak' }];
+    return [...nodes, textNode(line)];
+  });
+
+  return { type: 'paragraph', content };
 }
 
 function heading(text: string, depth: number): EditorNode {
