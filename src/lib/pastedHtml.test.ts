@@ -44,6 +44,35 @@ describe('sanitizePastedHTML', () => {
     expect(sanitized).not.toContain('·');
   });
 
+  it('drops Word empty spacer paragraphs and Office o:p tags', () => {
+    const html = [
+      '<p class="MsoNormal">First paragraph.<o:p></o:p></p>',
+      '<p class="MsoNormal"><o:p>&nbsp;</o:p></p>',
+      '<p class="MsoNormal">Second paragraph.<o:p></o:p></p>',
+      '<p class="MsoNormal" style="margin:0in"><o:p>&nbsp;</o:p></p>',
+      '<p class="MsoNormal">Third.<o:p></o:p></p>',
+    ].join('');
+
+    const sanitized = sanitizePastedHTML(html);
+
+    expect(sanitized).not.toContain('<o:p>');
+    expect(sanitized).not.toContain('&nbsp;');
+    expect(sanitized.match(/<p>/g)).toHaveLength(3);
+    expect(sanitized).toContain('<p>First paragraph.</p>');
+    expect(sanitized).toContain('<p>Second paragraph.</p>');
+    expect(sanitized).toContain('<p>Third.</p>');
+  });
+
+  it('removes paragraphs that hold only whitespace or line breaks', () => {
+    const html = '<p>Real line.</p><p><br></p><p>&nbsp;</p><p>   </p><p>Another line.</p>';
+
+    const sanitized = sanitizePastedHTML(html);
+
+    expect(sanitized.match(/<p>/g)).toHaveLength(2);
+    expect(sanitized).toContain('<p>Real line.</p>');
+    expect(sanitized).toContain('<p>Another line.</p>');
+  });
+
   it('converts ordered Word list paragraphs into semantic ordered lists', () => {
     const html = `
       <p class="MsoListParagraph" style="mso-list:l1 level1 lfo2">1. First</p>

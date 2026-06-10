@@ -1,4 +1,5 @@
 const REMOVED_SELECTORS = 'style, script, meta, link, xml, img, table';
+const EMPTY_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, div';
 
 export function sanitizePastedHTML(html: string): string {
   if (typeof document === 'undefined') {
@@ -10,6 +11,7 @@ export function sanitizePastedHTML(html: string): string {
 
   removeComments(template.content);
   template.content.querySelectorAll(REMOVED_SELECTORS).forEach((element) => element.remove());
+  removeOfficeNamespacedElements(template.content);
   normalizeWordLists(template.content);
 
   template.content.querySelectorAll('*').forEach((element) => {
@@ -17,7 +19,41 @@ export function sanitizePastedHTML(html: string): string {
     stripNoisyAttributes(element);
   });
 
+  removeEmptyBlocks(template.content);
+
   return template.innerHTML;
+}
+
+// Word/Office paste wraps content in namespaced elements (o:p, w:*, v:*) that are
+// empty or hold only a non-breaking space. Left in place they become empty
+// paragraphs — i.e. lots of extra blank lines. Drop them entirely.
+function removeOfficeNamespacedElements(root: DocumentFragment) {
+  for (const element of Array.from(root.querySelectorAll('*'))) {
+    if (element.tagName.includes(':')) {
+      element.remove();
+    }
+  }
+}
+
+// After cleanup, remove block elements that carry no real content (empty Word
+// spacer paragraphs, or blocks left holding only whitespace / line breaks).
+// Paragraph spacing in the editor handles separation, so dropping these is what
+// stops pasted Word documents from gaining extra newlines.
+function removeEmptyBlocks(root: DocumentFragment) {
+  // Innermost-first so an emptied wrapper is removed after its empty children.
+  const blocks = Array.from(root.querySelectorAll(EMPTY_BLOCK_SELECTOR)).reverse();
+
+  for (const block of blocks) {
+    if (block.querySelector('img, hr, li')) {
+      continue;
+    }
+
+    const text = (block.textContent ?? '').replace(/ /g, ' ').trim();
+
+    if (!text) {
+      block.remove();
+    }
+  }
 }
 
 function removeComments(root: DocumentFragment) {
