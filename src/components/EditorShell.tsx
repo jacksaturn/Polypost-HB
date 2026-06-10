@@ -68,7 +68,11 @@ function handleEditorPaste(editor: Editor, event: ClipboardEvent) {
   if (html.trim()) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    editor.commands.insertContent(sanitizePastedHTML(html));
+    // Parse to nodes via generateJSON rather than passing the HTML string to
+    // insertContent: insertContent treats whitespace between block tags as
+    // empty paragraphs, reintroducing the blank lines we just stripped.
+    const document = generateJSON(sanitizePastedHTML(html), extensions) as EditorNode;
+    editor.commands.insertContent(document.content ?? []);
   }
 }
 
