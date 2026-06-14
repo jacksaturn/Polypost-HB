@@ -154,6 +154,50 @@ h2 {
   align-items: start;
 }
 
+/* Editor collapsed: the rail takes the full width as 2 columns. */
+.workspace-grid.is-editor-collapsed {
+  grid-template-columns: 1fr;
+}
+
+.workspace-grid.is-editor-collapsed .platform-rail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+/* Platform chips share a row with a bare "Hide/Show editor" toggle (no extra row). */
+.platform-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.platform-bar .platform-chips {
+  flex: 1 1 auto;
+}
+
+.editor-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.editor-toggle:hover,
+.editor-toggle:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
 /* ---- Platform toggle chips ---- */
 .platform-chips {
   display: flex;
@@ -184,7 +228,10 @@ h2 {
   outline: none;
 }
 
+/* Enabled platforms get a consistent blue border to indicate the "on" state,
+   regardless of the platform's brand color (which still tints the icon/label). */
 .platform-chip.is-enabled {
+  border-color: var(--linkedin-blue);
   background: #fff;
   box-shadow: 0 6px 16px rgba(23, 35, 60, 0.08);
 }
@@ -732,24 +779,27 @@ h2 {
 
 .platform-card-buttons {
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
   padding: 12px 14px;
   border-top: 1px solid var(--line);
 }
 
+/* Content-sized (not stretched) so the buttons are a consistent, compact size on
+   every card, left-aligned. */
 .card-copy-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  flex: 1 1 auto;
-  min-height: 36px;
-  padding: 0 16px;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 12px;
   border: 1px solid rgba(10, 102, 194, 0.4);
   border-radius: 999px;
   background: var(--surface);
   color: var(--linkedin-blue-dark);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
@@ -1624,7 +1674,13 @@ h2 {
     width: min(720px, calc(100% - 22px));
   }
 
-  .workspace-grid {
+  .workspace-grid,
+  .workspace-grid.is-editor-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  /* On narrow screens the collapsed rail stays single-column. */
+  .workspace-grid.is-editor-collapsed .platform-rail {
     grid-template-columns: 1fr;
   }
 
@@ -1708,6 +1764,38 @@ h2 {
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
+  /* Lighter blues so blue text and accents stay readable on dark surfaces.
+     Saturated blue backgrounds (primary buttons) are restored explicitly below. */
+  --linkedin-blue: #6ab0f7;
+  --linkedin-blue-dark: #95c5fb;
+}
+
+/* Primary action buttons keep a saturated blue fill (white text) in dark mode,
+   since the blue vars above are tuned for text, not button backgrounds. */
+[data-theme='dark'] .primary-action {
+  background: #0a66c2;
+}
+
+[data-theme='dark'] .primary-action:hover:not(:disabled),
+[data-theme='dark'] .primary-action:focus-visible {
+  background: #1573d4;
+}
+
+/* Active toolbar button (e.g. Bold when selected): a dark-friendly blue tint with
+   a light-blue glyph — was white-on-light (invisible) in dark mode. */
+[data-theme='dark'] .tool-button.is-active {
+  border-color: rgba(112, 181, 249, 0.45);
+  background: rgba(112, 181, 249, 0.18);
+  color: var(--linkedin-blue-dark);
+}
+
+/* Near-black brand marks (X, Threads) would vanish on a dark card/chip — show
+   them in the theme's ink instead (overrides the inline brand color). */
+[data-theme='dark'] .platform-card.is-x .platform-card-brand,
+[data-theme='dark'] .platform-card.is-threads .platform-card-brand,
+[data-theme='dark'] .platform-chip.is-x.is-enabled,
+[data-theme='dark'] .platform-chip.is-threads.is-enabled {
+  color: var(--ink) !important;
 }
 
 [data-theme='dark'] body {
@@ -1748,16 +1836,25 @@ h2 {
 }
 
 [data-theme='dark'] .platform-chip,
+[data-theme='dark'] .platform-card-modes {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* Inactive buttons stay transparent (like light mode) so only the active one
+   reads as a raised pill; a solid surface here made the inactive look selected. */
 [data-theme='dark'] .card-mode-button {
-  background: var(--surface);
+  background: transparent;
   color: var(--muted);
-  border-color: var(--line);
 }
 
 [data-theme='dark'] .platform-chip.is-enabled,
 [data-theme='dark'] .card-mode-button.is-active {
   background: var(--surface-alt);
   color: var(--ink);
+}
+
+[data-theme='dark'] .platform-chip.is-enabled {
+  border-color: var(--linkedin-blue);
 }
 
 [data-theme='dark'] input:not([type='checkbox']):not([type='radio']),

@@ -6,6 +6,7 @@ import { blueskySpec } from './bluesky';
 import { facebookSpec } from './facebook';
 import { instagramSpec } from './instagram';
 import { linkedinSpec } from './linkedin';
+import { mastodonSpec } from './mastodon';
 import { threadsSpec } from './threads';
 import { xSpec } from './x';
 import type { PlatformId, PlatformRender, PlatformSpec } from './types';
@@ -16,6 +17,7 @@ export const PLATFORMS: PlatformSpec[] = [
   xSpec,
   blueskySpec,
   threadsSpec,
+  mastodonSpec,
   facebookSpec,
   instagramSpec,
 ];

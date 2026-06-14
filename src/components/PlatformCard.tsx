@@ -152,8 +152,8 @@ export function PlatformCard({
           ) : null}
         </span>
         <span className="platform-card-actions">
-          {aiReady && !isEditing ? (
-            <button type="button" className="card-icon-button card-ai-button" title={`Adapt for ${spec.label} with AI`} aria-label={`Adapt the post for ${spec.label} with AI`} disabled={isGenerating} onClick={onFit}>
+          {aiReady && !isEditing && isForked ? (
+            <button type="button" className="card-icon-button card-ai-button" title={`Discard your ${spec.label} edits and adapt with AI`} aria-label={`Discard your ${spec.label} edits and adapt with AI`} disabled={isGenerating} onClick={onFit}>
               <Sparkles aria-hidden="true" size={15} />
             </button>
           ) : null}

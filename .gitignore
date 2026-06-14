@@ -4,6 +4,7 @@ dist-extension/
 release/
 .edge-debug-profile/
 .edge-webapp-profile/
+.edge-webapp-profile2/
 coverage/
 .env.local
 .env.*.local

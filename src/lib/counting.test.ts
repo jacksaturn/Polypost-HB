@@ -52,4 +52,17 @@ describe('countCharacters', () => {
       expect(countCharacters('see https://a.co', 'x-weighted')).toBe(27);
     });
   });
+
+  describe('mastodon', () => {
+    it('counts each URL as a flat 23', () => {
+      expect(countCharacters('https://example.com/some/very/long/path', 'mastodon')).toBe(23);
+      expect(countCharacters('see https://a.co', 'mastodon')).toBe(27); // 4 + 23
+    });
+
+    it('counts code points without weighting CJK as 2 (unlike X)', () => {
+      expect(countCharacters('hello', 'mastodon')).toBe(5);
+      expect(countCharacters('日本語', 'mastodon')).toBe(3);
+      expect(countCharacters('🚀', 'mastodon')).toBe(1);
+    });
+  });
 });

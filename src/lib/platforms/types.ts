@@ -3,7 +3,7 @@ import type { CountingMethod } from '../counting';
 import type { EditorNode } from '../exportText';
 import type { PreviewMode, TruncationConfig } from '../truncation';
 
-export type PlatformId = 'linkedin' | 'x' | 'bluesky' | 'threads' | 'facebook' | 'instagram';
+export type PlatformId = 'linkedin' | 'x' | 'bluesky' | 'threads' | 'mastodon' | 'facebook' | 'instagram';
 
 // A pure, stateless description of a platform's formatting rules. Deliberately
 // free of React components and runtime/auth state so it can be fed verbatim to

@@ -19,9 +19,9 @@ const LLM_CONFIG_KEY = 'omnipost:llm-config-v1';
 
 // Sensible per-provider defaults so switching providers fills in a working URL/model.
 export const PROVIDER_DEFAULTS: Record<LlmProvider, { baseUrl: string; model: string }> = {
-  anthropic: { baseUrl: 'https://api.anthropic.com', model: 'claude-opus-4-8' },
-  openai: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
-  gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta', model: 'gemini-2.0-flash' },
+  anthropic: { baseUrl: 'https://api.anthropic.com', model: 'claude-sonnet-4-6' },
+  openai: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-5.4-mini' },
+  gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta', model: 'gemini-3.1-flash' },
 };
 
 export const PROVIDER_LABELS: Record<LlmProvider, string> = {

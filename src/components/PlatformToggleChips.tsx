@@ -24,9 +24,9 @@ export function PlatformToggleChips({ specs, enabled, dormant = [], onToggle }: 
           <button
             key={spec.id}
             type="button"
-            className={`platform-chip${isEnabled ? ' is-enabled' : ''}`}
+            className={`platform-chip is-${spec.id}${isEnabled ? ' is-enabled' : ''}`}
             aria-pressed={isEnabled}
-            style={isEnabled ? { borderColor: spec.brandColor, color: spec.brandColor } : undefined}
+            style={isEnabled ? { color: spec.brandColor } : undefined}
             onClick={() => onToggle(spec.id)}
           >
             <Icon size={15} />

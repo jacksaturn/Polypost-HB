@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { HelpCircle, Moon, Settings, Sun } from 'lucide-react';
+import { HelpCircle, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sun } from 'lucide-react';
 
 import { AiAssist } from './components/AiAssist';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -80,6 +80,9 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [theme, setTheme] = useState<Theme>(loadTheme);
+  // Collapse the editor column to give the preview rail the full width (2 columns).
+  // Only offered when more than 2 platforms are enabled.
+  const [editorCollapsed, setEditorCollapsed] = useState(false);
   const [resyncTarget, setResyncTarget] = useState<PlatformId | null>(null);
   const [aiVersions, setAiVersions] = useState<Map<PlatformId, EditorNode>>(() => new Map());
   const [generating, setGenerating] = useState<Set<PlatformId>>(() => new Set());
@@ -159,6 +162,7 @@ function App() {
     return ids;
   }, [aiVersions, workspace.overrides]);
   const dormant = dormantPlatforms(workspace);
+  const isEditorCollapsed = editorCollapsed;
 
   // Auto-fit: after a typing pause, rewrite enabled, over-limit, non-forked
   // platforms to fit, and drop AI versions that no longer apply.
@@ -245,6 +249,10 @@ function App() {
 
     try {
       const result = await generateFit({ config: llmConfig, spec, masterText: docToPlainText(workspace.master), style: llmConfig.stylePrompt, linkUrls: sharedLinkUrls });
+      // The sparkle only appears on a forked (edited) card, so applying the AI
+      // version means discarding the manual edit: drop the override so the AI
+      // version (which would otherwise be hidden behind it) becomes visible.
+      setWorkspace((prev) => resyncPlatform(prev, id));
       setAiVersions((prev) => new Map(prev).set(id, result.doc));
     } catch (error) {
       setAiError(`${spec.label}: ${error instanceof Error ? error.message : 'AI request failed.'}`);
@@ -470,14 +478,27 @@ function App() {
           </div>
         </header>
 
-        <PlatformToggleChips
-          specs={PLATFORMS}
-          enabled={workspace.enabledPlatforms}
-          dormant={dormant}
-          onToggle={handleTogglePlatform}
-        />
+        <div className="platform-bar">
+          <PlatformToggleChips
+            specs={PLATFORMS}
+            enabled={workspace.enabledPlatforms}
+            dormant={dormant}
+            onToggle={handleTogglePlatform}
+          />
+          <button
+            type="button"
+            className="editor-toggle"
+            aria-label={isEditorCollapsed ? 'Show the editor' : 'Hide the editor'}
+            title={isEditorCollapsed ? 'Show editor' : 'Hide editor'}
+            onClick={() => setEditorCollapsed((value) => !value)}
+          >
+            {isEditorCollapsed ? <PanelLeftOpen aria-hidden="true" size={15} /> : <PanelLeftClose aria-hidden="true" size={15} />}
+            <span>{isEditorCollapsed ? 'Show editor' : 'Hide editor'}</span>
+          </button>
+        </div>
 
-        <section className="workspace-grid" aria-label={`${APP_NAME} workspace`}>
+        <section className={`workspace-grid${isEditorCollapsed ? ' is-editor-collapsed' : ''}`} aria-label={`${APP_NAME} workspace`}>
+          {isEditorCollapsed ? null : (
           <div className="workspace-panel editor-workspace">
             {storageNotice ? <p className="inline-alert panel-alert" role="status">{storageNotice}</p> : null}
 
@@ -513,6 +534,7 @@ function App() {
               onSave={handleSaveDraftSnapshot}
             />
           </div>
+          )}
 
           <PlatformRail
             specs={enabledSpecs}

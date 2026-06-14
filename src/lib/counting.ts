@@ -5,7 +5,9 @@ import { URL_PATTERN } from './unicodeStyles';
 // - 'graphemes': user-perceived characters / grapheme clusters (Bluesky).
 // - 'x-weighted': X/Twitter's weighted scheme — most characters count as 1,
 //   wide ranges (CJK, emoji) as 2, and each URL as a fixed 23.
-export type CountingMethod = 'nfc-codepoints' | 'graphemes' | 'x-weighted';
+// - 'mastodon': like nfc-codepoints, but every URL counts as a flat 23 (Mastodon
+//   counts links as 23 chars; unlike X it does NOT weight CJK/emoji as 2).
+export type CountingMethod = 'nfc-codepoints' | 'graphemes' | 'x-weighted' | 'mastodon';
 
 const URL_WEIGHT = 23;
 
@@ -22,10 +24,31 @@ export function countCharacters(text: string, method: CountingMethod): number {
       return countGraphemes(normalized);
     case 'x-weighted':
       return countXWeighted(normalized);
+    case 'mastodon':
+      return countMastodon(normalized);
     case 'nfc-codepoints':
     default:
       return Array.from(normalized).length;
   }
+}
+
+// Code points, but each URL counts as a flat 23 (Mastodon's rule). No CJK/emoji
+// doubling. Approximation: a mention's instance domain isn't excluded (OmniPost's
+// @[Name] tokens have no domain to strip).
+function countMastodon(normalized: string): number {
+  const urlPattern = new RegExp(URL_PATTERN.source, 'gu');
+  let count = 0;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = urlPattern.exec(normalized)) !== null) {
+    count += Array.from(normalized.slice(lastIndex, match.index)).length;
+    count += URL_WEIGHT;
+    lastIndex = match.index + match[0].length;
+  }
+
+  count += Array.from(normalized.slice(lastIndex)).length;
+  return count;
 }
 
 function countGraphemes(normalized: string): number {
