@@ -1,44 +1,29 @@
 # Polypost
 
-Draft a post once and see it formatted for every platform at the same time. The main editor uses TipTap for word-processor-style editing; a live preview rail shows what your post looks like on **LinkedIn, X, Bluesky, Threads, Facebook, and Instagram**, each with its own character limit, counting rule, and formatting limits applied. Edit inside any preview to tailor that platform's version, then copy it (or open that platform's composer) in one click.
+Draft a post once and format it for every platform at the same time. The main editor uses TipTap for word-processor-style editing, and a live preview rail shows your post on **LinkedIn, X, Bluesky, Threads, Facebook, and Instagram**, each with its own character limit, counting rule, and formatting applied.
+
+**Using it:** write in the main editor and toggle the platforms you care about with the chips. Each enabled platform shows a live preview card with its character count; edit inside a card to *fork* a platform-specific version (it gets a Customized badge), and re-sync to the main draft any time. Use **Copy** for platform-ready text, or **Copy & open** to launch that platform's composer pre-filled (X, Bluesky, Threads). Tag people by writing `@[Name]` — previews and copied text show it as `@Name`, and the LinkedIn extension resolves it into a real, clickable mention (pasted text can't become a mention, so retype it in the composer to pick the person if you're not posting through the extension). Add an image or link once in the **Images & links** tray to reuse everywhere: links fold into each platform's text and count, and an image can be copied to the clipboard to paste into LinkedIn (or downloaded / dragged into any composer). Optionally connect your own LLM key (Anthropic Claude, Google Gemini, or any OpenAI-compatible endpoint) to write, adapt, and auto-fit posts — with documents or URLs as reference context — and your key stays in your browser.
 
 It ships in two forms:
 
 - **Web app** — the multi-platform editor. Live at https://markrussinovich.github.io/Polypost/
-- **Browser extension** — runs on LinkedIn itself. Clicking **Start a post** opens the formatter *as* the composer; its **Post** button writes the formatted text into LinkedIn's native composer and submits through LinkedIn's own Post flow. The extension remains LinkedIn-specific. See [Browser Extension](#browser-extension).
+- **LinkedIn browser extension** — a LinkedIn-only companion that turns LinkedIn's own composer into the editor: **Start a post** opens it in place of the native box, and **Post** publishes through LinkedIn's own flow. See [LinkedIn browser extension](#linkedin-browser-extension).
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="Polypost screenshot" width="640">
+  <img src="docs/screenshot.png" alt="Polypost screenshot" width="480">
 </p>
 
 This is not an official app of any platform. Drafts stay in your browser; the extension only acts on LinkedIn when you click Post.
 
 ## Features
 
-- **Multi-platform live previews.** Toggle platforms on/off with chips; enabled platforms appear as feed-style cards in the right-hand rail and update as you type.
-- **Per-platform rules.** LinkedIn (3,000 chars, styled Unicode), X (280, weighted counting — URLs count as 23, an estimate), Bluesky (300, grapheme-cluster counting), Threads (500), Facebook (long-form with a "See more" cutoff), Instagram (2,200, with a warning that captions don't render clickable links).
-- **Fork-on-edit.** Each preview mirrors the main draft until you edit it; the first edit "forks" that platform into a customized version (Customized badge) with a one-click re-sync back to the main draft. Hiding a customized platform keeps its customization dormant until you re-enable it.
-- **Copy per platform.** Every card has Copy (platform-ready text) and, where supported, Copy & open — which copies and opens that platform's composer pre-filled (X, Bluesky, Threads).
-- **Optional AI assist.** Connect an LLM endpoint (Anthropic Claude, Google Gemini, or any OpenAI-compatible endpoint that allows browser/CORS calls) via the gear icon. The AI can write or improve the main draft, rewrite a single platform on demand ("Adapt with AI"), and — with auto-fit enabled — automatically rewrite any over-limit platform to fit, ~3 seconds after you stop typing. AI-fitted cards show an **AI** badge and can be re-synced to the master; manual edits always take precedence over AI versions. The API key is stored only in your browser, and calls go directly from the browser to your endpoint.
-- **Reference sources for AI.** Give the AI background to draw on: attach a `.txt`/`.md`/`.docx` file, a URL (fetched directly; paste the text if the site blocks it), or pasted text in the AI box. Sources are context only — they're used when the AI writes, never posted. Stored locally.
-- **Shared images & links.** Add an image or a link once in the "Images & links" tray and reuse it everywhere. Link URLs fold into each platform's copied text and character count automatically (and the auto-fit reserves room for them). For an image, use **Copy image** to put the picture on your clipboard and paste it straight into the LinkedIn composer, or download / drag it into any other composer. Links are saved locally; images are kept for the session.
-- TipTap rich text editor with toolbar controls and keyboard shortcuts. Newlines map 1:1 to the post like LinkedIn's own composer — press Enter for a new line and again for a blank line — and the editor's spacing matches the previews exactly.
-- Sans-serif Unicode bold, italic, bold italic, code, experimental underline, and experimental strikethrough export (LinkedIn); plain text for platforms where styled Unicode hurts reach/accessibility.
-- Nested bullet and numbered lists with non-breaking-space indentation.
-- Blockquotes exported as indented plain text, and horizontal dividers exported as plain divider lines.
-- Links export as readable label plus URL, for example `Read more (https://example.com)`.
-- Hashtags remain plain text so platforms have the best chance to recognize them.
-- Mentions: write `@[Name]` to tag people; copying flattens to plain `@Name`, and posting through the LinkedIn extension resolves tokens into real LinkedIn mentions (see [Mentions](#mentions)).
-- Searchable emoji picker with emoji-safe export behavior.
-- Pasted Markdown converts to formatted draft text for common inline marks, links, headings, fenced code, lists, blockquotes, and dividers.
-- Pasted Word/Office HTML is cleaned into editor-friendly content while preserving common inline styling where possible.
-- Upload or drag `.txt`, `.md`, `.markdown`, or `.docx` files into the draft editor.
-- A LinkedIn-style desktop/mobile feed preview of the main draft with an estimated "more" cutoff toggle.
-- One-click copy with a fallback for browsers that block the Clipboard API.
-- Local draft autosave (including per-platform customizations and enabled platforms), reset/recovery behavior, and saved drafts.
-- Extension: one-click publish through LinkedIn's native composer, with the native composer kept hidden so the formatter feels like the real post box.
-- Extension: attach images (up to 20) or a single video; media is handed to LinkedIn's own upload flow when you click Post.
-- GitHub Actions workflow for GitHub Pages deployment.
+- **Live multi-platform previews** with each platform's character limit, counting rule, formatting, and warnings — LinkedIn, X, Bluesky, Threads, Facebook, and Instagram.
+- **Fork-on-edit** per platform with one-click re-sync, plus local autosave and saved drafts.
+- **`@[Name]` mentions**, resolved into real LinkedIn mentions when posting through the extension.
+- **Shared images & links** — add once, reuse everywhere; *Copy image* pastes a picture straight into LinkedIn.
+- **Optional, bring-your-own-key AI** — write, adapt a single platform, auto-fit over-limit posts, and feed in reference sources (files, URLs, or pasted text).
+- **Rich-text editing** — Markdown and Word paste, file import, emoji, lists, and links, with LinkedIn-style Unicode styling where it helps.
+- **Private by default** — drafts, settings, and API keys stay in your browser; nothing leaves it except the AI endpoint you choose to configure.
 
 ## Local Development
 
@@ -65,9 +50,9 @@ Preview the production build locally:
 npm run preview
 ```
 
-## Browser Extension
+## LinkedIn browser extension
 
-The extension turns the LinkedIn composer into the formatter. Clicking **Start a post** on LinkedIn opens the rich-text formatter in place of the native post box. When you click **Post**, the formatter exports LinkedIn-ready Unicode text, writes it into LinkedIn's native composer behind the scenes, and clicks LinkedIn's own **Post** button. The native composer stays hidden throughout, so it feels like you are posting directly from the formatter.
+The extension is **LinkedIn-only** — it runs on, and posts to, LinkedIn and nowhere else. It turns LinkedIn's composer into the editor: clicking **Start a post** on LinkedIn opens the rich-text editor in place of the native post box. When you click **Post**, it exports LinkedIn-ready Unicode text (resolving `@[Name]` mentions through LinkedIn's typeahead into real, clickable mentions), writes it into LinkedIn's native composer behind the scenes, and clicks LinkedIn's own **Post** button. The native composer stays hidden throughout, so it feels like you are posting directly from the editor.
 
 ### How it works
 
@@ -75,15 +60,6 @@ The extension turns the LinkedIn composer into the formatter. Clicking **Start a
 - LinkedIn renders its composer inside a **shadow root**, so the script pierces shadow boundaries to find the composer, suppress it (CSS `visibility:hidden` while you edit, so its focus trap cannot steal focus from the formatter), and drive it.
 - On **Post**, the script briefly makes the hidden composer focusable, hands any attached images/videos to LinkedIn's media upload input (confirming the media editor's **Next** step), inserts the exported text (resolving `@[Name]` mention tokens through the composer's mention typeahead), waits for LinkedIn's link preview card when the text contains a URL, waits for LinkedIn's Post button to enable, clicks it, and confirms the composer closed.
 - A service worker (`src/extension/public/background.js`) re-injects the script if you click the toolbar icon on a LinkedIn tab.
-
-### Mentions
-
-Write `@[Name]` in the draft — for example `@[Scott Hanselman]` — to mention someone. The editor shows the token as plain text; the preview and character count show it flattened as `@Name`.
-
-- **Posting through the extension** resolves each token into a real mention: the bridge types `@name` into LinkedIn's hidden composer one character at a time, waits for LinkedIn's mention typeahead, and clicks the entry whose name matches exactly (case-insensitive). LinkedIn ranks your closest connection first when several people share a name. The published post shows a clickable mention rendered as the person's name (LinkedIn drops the `@` and brackets), and they receive the usual mention notification. Each mention adds a couple of seconds to posting while the typeahead resolves.
-- **If nothing matches exactly** (a typo, or someone LinkedIn's typeahead will not surface), the token degrades to plain `@name` text in the post. A near-match is never clicked, so the wrong person cannot be mentioned.
-- **Copy for LinkedIn and the web app** always flatten tokens to plain `@Name` text. Pasted text can never become a real mention — LinkedIn only creates mention entities through its own typeahead — so after pasting, retype `@Name` in LinkedIn's composer and pick from the dropdown to mention manually.
-- Mention tokens stay unstyled inside bold or italic text, both because styled (Unicode) names would never match the typeahead and because LinkedIn renders mentions unstyled anyway.
 
 ### Permissions
 
@@ -124,14 +100,6 @@ node scripts/generate-extension-icons.mjs
 The workflow in `.github/workflows/pages.yml` builds the app and deploys `dist` to GitHub Pages on pushes to `main`.
 
 In the repository settings, set Pages source to **GitHub Actions**. The workflow passes `VITE_BASE_PATH` as `/${{ github.event.repository.name }}/`, which matches the standard project Pages URL path. For a custom domain, set `VITE_BASE_PATH` to `/` in the workflow.
-
-## LinkedIn Formatting Limits
-
-LinkedIn feed posts are plain text. LinkedIn itself does not reliably preserve pasted HTML, Markdown syntax, Word document formatting, or CSS font choices, so this app converts pasted Markdown and uploaded `.docx` content into editor formatting and uses sans-serif Unicode characters for visual styling. That means formatting is visual rather than semantic, and assistive technologies may not announce it as bold or italic. LinkedIn still controls the final post font after paste.
-
-The character counter is based on the exported clipboard text and uses a 3,000-character feed post limit. LinkedIn can change limits or count edge-case Unicode differently, so paste into LinkedIn before publishing high-stakes posts.
-
-The desktop/mobile feed previews are client-side visual simulations. Public preview tools and guidance describe LinkedIn's collapsed feed cutoff as line-based rather than a fixed character count: about three visible lines, roughly 210 characters in a desktop-width feed column and 140 in a mobile-width column depending on line breaks, glyph widths, emojis, and user font settings. The More cutoff toggle uses those thresholds as an estimate. LinkedIn does not provide a public browser-only API for showing a real logged-in feedcard preview without posting, and the static GitHub Pages app cannot authenticate to LinkedIn or call LinkedIn APIs directly.
 
 ## License
 
