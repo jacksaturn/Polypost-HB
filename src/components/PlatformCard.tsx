@@ -6,7 +6,7 @@ import { exportText, type EditorNode } from '../lib/exportText';
 import { parseMentionSegments } from '../lib/mentions';
 import type { Attachment } from '../lib/media';
 import type { PlatformRender, PlatformSpec } from '../lib/platforms/types';
-import { isTextTruncated, type PreviewMode, type TruncationConfig } from '../lib/truncation';
+import { collapseToPreview, isTextTruncated, type PreviewMode } from '../lib/truncation';
 import { CharacterMeter } from './CharacterMeter';
 import { PaneEditor } from './PaneEditor';
 import { PLATFORM_ICONS } from './platformIcons';
@@ -78,7 +78,7 @@ export function PlatformCard({
 
   const hasText = Boolean(render.text.trim());
   const showCollapsed = truncated && !expanded && activeCutoff !== null;
-  const displayText = showCollapsed && activeCutoff ? collapseText(render.text, activeCutoff) : render.text;
+  const displayText = showCollapsed && activeCutoff ? collapseToPreview(render.text, activeCutoff) : render.text;
   // The flattened mention strings present in this platform's text, so they can be
   // highlighted in the preview the same way the editor highlights @[Name] tokens.
   const mentionStrings = useMemo(() => collectMentionStrings(document, spec), [document, spec]);
@@ -161,7 +161,7 @@ export function PlatformCard({
               <Sparkles aria-hidden="true" size={15} />
             </button>
           ) : null}
-          {isForked || isAiAdapted ? (
+          {isForked ? (
             <button type="button" className="card-icon-button" title="Re-sync from master draft" aria-label={`Re-sync ${spec.label} from the master draft`} onClick={onResync}>
               <RotateCcw aria-hidden="true" size={15} />
             </button>
@@ -257,25 +257,6 @@ function CardAttachments({ attachments, platformLabel }: { attachments: Attachme
       ))}
     </div>
   );
-}
-
-// Approximate a feed cutoff by trimming to the breakpoint's character estimate,
-// backing off to the last word boundary so we don't cut mid-word.
-function collapseText(text: string, config: TruncationConfig): string {
-  const characters = Array.from(text);
-
-  if (characters.length <= config.approximateCharacters) {
-    return text;
-  }
-
-  let slice = characters.slice(0, config.approximateCharacters).join('');
-  const lastSpace = slice.lastIndexOf(' ');
-
-  if (lastSpace > config.approximateCharacters * 0.6) {
-    slice = slice.slice(0, lastSpace);
-  }
-
-  return `${slice.trimEnd()}…`;
 }
 
 // The flattened display form of each @[Name] mention in this platform's text

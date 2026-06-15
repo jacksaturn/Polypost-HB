@@ -61,10 +61,23 @@ export function buildFitRequest(spec: PlatformSpec, masterText: string, style?: 
 }
 
 // Follow-up instruction when a fitted version still exceeds the limit.
-export function buildOverLimitFeedback(spec: PlatformSpec, previousText: string, previousCount: number, limit: number = spec.charLimit): string {
+// `failedAttempts` is how many times the model has now gone over; after two it
+// gets a firmer instruction to cut hard and aim under the limit with headroom.
+export function buildOverLimitFeedback(
+  spec: PlatformSpec,
+  previousText: string,
+  previousCount: number,
+  limit: number = spec.charLimit,
+  failedAttempts = 1,
+): string {
+  const aggressive =
+    failedAttempts >= 2
+      ? ` You have now gone over the limit ${failedAttempts} times. Be aggressive: remove whole sentences, drop examples, adjectives, and any hashtags or emoji you can spare, and aim for about ${Math.floor(limit * 0.9)} characters so there is headroom. A shorter post that fits is far better than a longer one that does not.`
+      : '';
+
   return (
     `That version was ${previousCount} characters — ${previousCount - limit} over the ${limit}-character limit for your text. ` +
-    `Rewrite it to be at most ${limit} characters. Cut or condense content as needed.\n\n` +
+    `Rewrite it to be at most ${limit} characters. Cut or condense content as needed.${aggressive}\n\n` +
     `Previous version:\n${previousText}`
   );
 }

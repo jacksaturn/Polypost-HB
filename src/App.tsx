@@ -382,6 +382,19 @@ function App() {
     clearAiVersion(id);
     setActivePaneEditor((current) => (current === id ? null : current));
     setResyncTarget(null);
+
+    // If the freshly re-synced master text overflows this platform, adapt it now
+    // (showing the "Adapting…" notice) instead of waiting for the idle autofit pass.
+    const spec = PLATFORMS_BY_ID[id];
+
+    if (spec && aiReady && llmConfig.autoFit) {
+      const overLimit =
+        renderForPlatform(workspace.master, spec, { linkUrls: sharedLinkUrls }).summary.count > spec.charLimit;
+
+      if (overLimit) {
+        void handleFit(id);
+      }
+    }
   }
 
   function handleTogglePlatform(id: PlatformId) {

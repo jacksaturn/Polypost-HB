@@ -73,19 +73,59 @@ export async function generateFit({ config, spec, masterText, style, signal, max
       best = { doc, text, count };
     }
 
-    feedback = buildOverLimitFeedback(spec, text, count, effectiveLimit);
+    // `attempt` == the number of times the model has now gone over the limit,
+    // so the feedback escalates to an aggressive cut after the second miss.
+    feedback = buildOverLimitFeedback(spec, text, count, effectiveLimit, attempt);
 
     if (signal?.aborted) {
       break;
     }
   }
 
-  // Couldn't get fully under the limit — return the shortest attempt as a best effort.
+  // The model couldn't get fully under the limit in the allotted attempts.
+  // Deterministically trim its shortest attempt so autofit never leaves a card
+  // over the limit (e.g. a Threads post stuck at 502/500).
   const fallback = best ?? measureToResult('', spec);
-  return { ...fallback, withinLimit: false, attempts: maxAttempts };
+  const trimmed = trimToLimit(fallback.text, spec, effectiveLimit);
+  return { ...trimmed, withinLimit: trimmed.count <= effectiveLimit, attempts: maxAttempts };
 }
 
 function measureToResult(text: string, spec: PlatformSpec): { doc: EditorNode; text: string; count: number } {
   const { doc, count } = measure(text, spec);
   return { doc, text, count };
+}
+
+// Last-resort deterministic shortener: finds the longest prefix of `text` that
+// renders within `limit` (binary search on the platform's real counting), then
+// backs off to the nearest word boundary so it doesn't cut mid-word.
+function trimToLimit(text: string, spec: PlatformSpec, limit: number): { doc: EditorNode; text: string; count: number } {
+  const initial = measure(text, spec);
+
+  if (initial.count <= limit) {
+    return { doc: initial.doc, text, count: initial.count };
+  }
+
+  const chars = Array.from(text);
+  let lo = 0;
+  let hi = chars.length;
+
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    const fits = measure(chars.slice(0, mid).join(''), spec).count <= limit;
+
+    if (fits) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  let slice = chars.slice(0, lo).join('').replace(/\s+$/u, '');
+  const lastSpace = slice.lastIndexOf(' ');
+
+  if (lastSpace > lo * 0.7) {
+    slice = slice.slice(0, lastSpace).replace(/\s+$/u, '');
+  }
+
+  return measureToResult(slice, spec);
 }

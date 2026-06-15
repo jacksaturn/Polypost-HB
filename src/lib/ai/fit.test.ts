@@ -39,7 +39,7 @@ describe('generateFit deterministic length check', () => {
     expect(mockGenerate.mock.calls[1][0].prompt).toContain('over the 280');
   });
 
-  it('returns the shortest best effort when every attempt exceeds the limit', async () => {
+  it('deterministically trims to fit when every attempt exceeds the limit', async () => {
     mockGenerate.mockReset();
     mockGenerate
       .mockResolvedValueOnce('x'.repeat(500))
@@ -49,7 +49,38 @@ describe('generateFit deterministic length check', () => {
     const result = await generateFit({ config, spec: xSpec, masterText: 'long', maxAttempts: 3 });
 
     expect(mockGenerate).toHaveBeenCalledTimes(3);
-    expect(result.withinLimit).toBe(false);
-    expect(result.count).toBe(320);
+    // Autofit must never leave a card over the limit, even when the model can't.
+    expect(result.withinLimit).toBe(true);
+    expect(result.count).toBeLessThanOrEqual(xSpec.charLimit);
+  });
+
+  it('escalates to an aggressive cut after two failed attempts', async () => {
+    mockGenerate.mockReset();
+    mockGenerate
+      .mockResolvedValueOnce('x'.repeat(400)) // attempt 1 over
+      .mockResolvedValueOnce('x'.repeat(360)) // attempt 2 over
+      .mockResolvedValueOnce('Fits now.'); // attempt 3 within
+
+    await generateFit({ config, spec: xSpec, masterText: 'long', maxAttempts: 4 });
+
+    // The 2nd retry prompt (after two misses) carries the firmer instruction.
+    expect(mockGenerate.mock.calls[1][0].prompt).not.toContain('Be aggressive');
+    expect(mockGenerate.mock.calls[2][0].prompt).toContain('Be aggressive');
+  });
+
+  it('preserves a word boundary when trimming a best effort with spaces', async () => {
+    mockGenerate.mockReset();
+    const overLimit = `${'word '.repeat(80)}END`; // 400+ chars, well over 280
+    mockGenerate
+      .mockResolvedValueOnce(overLimit)
+      .mockResolvedValueOnce(overLimit)
+      .mockResolvedValueOnce(overLimit);
+
+    const result = await generateFit({ config, spec: xSpec, masterText: 'long', maxAttempts: 3 });
+
+    expect(result.withinLimit).toBe(true);
+    expect(result.count).toBeLessThanOrEqual(xSpec.charLimit);
+    // Trimmed at a space, so it doesn't end mid-word.
+    expect(result.text.endsWith('word')).toBe(true);
   });
 });
