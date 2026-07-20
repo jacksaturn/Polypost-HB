@@ -4,16 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorNode } from './lib/exportText';
 
 vi.mock('./components/EditorShell', () => ({
-  EditorShell: ({ onDocumentChange }: { onDocumentChange: (document: EditorNode) => void }) => (
-    <textarea
-      aria-label="Mock post editor"
-      onChange={(event) => {
-        onDocumentChange({
-          type: 'doc',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: event.target.value }] }],
-        });
-      }}
-    />
+  EditorShell: ({ onDocumentChange, onReset }: { onDocumentChange: (document: EditorNode) => void; onReset: () => void }) => (
+    <div>
+      <textarea
+        aria-label="Mock post editor"
+        onChange={(event) => {
+          onDocumentChange({
+            type: 'doc',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: event.target.value }] }],
+          });
+        }}
+      />
+      <button type="button" onClick={onReset}>Mock reset</button>
+    </div>
   ),
 }));
 
@@ -96,6 +99,39 @@ describe('App URL preview fetching', () => {
     saveAiSettings('Make it concise and warm.');
 
     expect(generateFit).not.toHaveBeenCalled();
+  });
+
+  it('asks for confirmation before resetting a draft with content', () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText('Mock post editor'), { target: { value: 'Precious draft' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mock reset' }));
+
+    expect(screen.getByText('Reset draft?')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+    expect(screen.queryByText('Reset draft?')).toBeNull();
+  });
+
+  it('resets an empty draft without asking for confirmation', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mock reset' }));
+
+    expect(screen.queryByText('Reset draft?')).toBeNull();
+  });
+
+  it('asks for confirmation before restoring a saved draft over unsaved content', () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText('Mock post editor'), { target: { value: 'First draft' } });
+    fireEvent.click(screen.getByText('Saved drafts'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    fireEvent.change(screen.getByLabelText('Mock post editor'), { target: { value: 'Unsaved second draft' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    expect(screen.getByText(/^Restore "/)).toBeTruthy();
   });
 
   it('auto-fits over-limit platform text immediately when AI settings are saved', () => {

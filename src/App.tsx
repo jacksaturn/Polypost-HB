@@ -57,6 +57,14 @@ const AUTOFIT_IDLE_MS = 3000;
 // Start blank rather than with sample content; the editor shows its placeholder.
 const EMPTY_DOCUMENT: EditorNode = { type: 'doc', content: [{ type: 'paragraph' }] };
 
+// Destructive actions that replace or discard the current draft ask first via
+// an integrated dialog (never a browser confirm popup).
+type ConfirmAction =
+  | { kind: 'resync'; id: PlatformId }
+  | { kind: 'reset' }
+  | { kind: 'replace'; document: EditorNode }
+  | { kind: 'restore'; draft: DraftSnapshot };
+
 function App() {
   const [initialLoad] = useState(loadWorkspace);
   const [workspace, setWorkspace] = useState<Workspace>(() => ({
@@ -81,7 +89,7 @@ function App() {
   // Collapse the editor column to give the preview rail the full width (2 columns).
   // Only offered when more than 2 platforms are enabled.
   const [editorCollapsed, setEditorCollapsed] = useState(false);
-  const [resyncTarget, setResyncTarget] = useState<PlatformId | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [aiVersions, setAiVersions] = useState<Map<PlatformId, EditorNode>>(() => new Map());
   const [generating, setGenerating] = useState<Set<PlatformId>>(() => new Set());
   const [aiError, setAiError] = useState<string | null>(null);
@@ -422,6 +430,17 @@ function App() {
   }
 
   function handleReplaceDocument(nextMaster: EditorNode) {
+    // Importing or dropping a file replaces the whole draft; ask first when
+    // there is a draft to lose (a stray drop must not wipe hours of work).
+    if (docToPlainText(workspace.master).trim()) {
+      setConfirmAction({ kind: 'replace', document: nextMaster });
+      return;
+    }
+
+    performReplaceDocument(nextMaster);
+  }
+
+  function performReplaceDocument(nextMaster: EditorNode) {
     setWorkspace((prev) => applyMasterEdit(prev, nextMaster));
     setAiVersions(new Map());
     setEditorVersion((version) => version + 1);
@@ -460,22 +479,24 @@ function App() {
     });
   }
 
-  function handleResync(id: PlatformId) {
-    // Ask via an integrated dialog rather than a browser confirm popup.
-    setResyncTarget(id);
+  // Whether discarding the current workspace would lose anything the user made.
+  function hasUnsavedContent(): boolean {
+    return (
+      Boolean(docToPlainText(workspace.master).trim()) ||
+      Object.keys(workspace.overrides).length > 0 ||
+      sources.length > 0 ||
+      imageAttachment !== null
+    );
   }
 
-  function confirmResync() {
-    const id = resyncTarget;
+  function handleResync(id: PlatformId) {
+    setConfirmAction({ kind: 'resync', id });
+  }
 
-    if (!id) {
-      return;
-    }
-
+  function performResync(id: PlatformId) {
     setWorkspace((prev) => resyncPlatform(prev, id));
     clearAiVersion(id);
     setActivePaneEditor((current) => (current === id ? null : current));
-    setResyncTarget(null);
 
     // If the freshly re-synced master text overflows this platform, adapt it now
     // (showing the "Adapting…" notice) instead of waiting for the idle autofit pass.
@@ -498,6 +519,15 @@ function App() {
   }
 
   function handleReset() {
+    if (!hasUnsavedContent()) {
+      performReset();
+      return;
+    }
+
+    setConfirmAction({ kind: 'reset' });
+  }
+
+  function performReset() {
     setWorkspace((prev) => ({ ...prev, master: EMPTY_DOCUMENT, overrides: {} }));
     setAiVersions(new Map());
     setActivePaneEditor(null);
@@ -528,6 +558,15 @@ function App() {
   }
 
   function handleRestoreDraftSnapshot(draft: DraftSnapshot) {
+    if (!hasUnsavedContent()) {
+      performRestoreDraftSnapshot(draft);
+      return;
+    }
+
+    setConfirmAction({ kind: 'restore', draft });
+  }
+
+  function performRestoreDraftSnapshot(draft: DraftSnapshot) {
     startedPreviewKeys.current.clear();
     setLinkPreviews(new Map());
     setDebouncedPlatformPreviewUrls([]);
@@ -544,6 +583,23 @@ function App() {
     setStorageNotice(null);
   }
 
+  function runConfirmAction(action: ConfirmAction) {
+    switch (action.kind) {
+      case 'resync':
+        performResync(action.id);
+        break;
+      case 'reset':
+        performReset();
+        break;
+      case 'replace':
+        performReplaceDocument(action.document);
+        break;
+      case 'restore':
+        performRestoreDraftSnapshot(action.draft);
+        break;
+    }
+  }
+
   function handleDeleteDraftSnapshot(id: string) {
     const result = deleteDraftSnapshot(id);
 
@@ -556,7 +612,7 @@ function App() {
   }
 
   return (
-    <ErrorBoundary onReset={handleReset}>
+    <ErrorBoundary onReset={performReset}>
       <main className="app-shell">
         <header className="app-header" aria-labelledby="app-title">
           <div className="brand-lockup" aria-hidden="true">
@@ -674,18 +730,48 @@ function App() {
       </main>
       {showSettings ? <LlmSettings config={llmConfig} onSave={handleSaveSettings} onClose={() => setShowSettings(false)} /> : null}
       {showHelp ? <HelpModal onClose={() => setShowHelp(false)} /> : null}
-      {resyncTarget ? (
+      {confirmAction ? (
         <ConfirmDialog
-          title={`Re-sync ${PLATFORMS_BY_ID[resyncTarget]?.label ?? 'platform'}?`}
-          message="This discards the customized version for this platform and follows the master draft again."
-          confirmLabel="Re-sync"
-          onConfirm={confirmResync}
-          onCancel={() => setResyncTarget(null)}
+          {...describeConfirmAction(confirmAction)}
+          onConfirm={() => {
+            setConfirmAction(null);
+            runConfirmAction(confirmAction);
+          }}
+          onCancel={() => setConfirmAction(null)}
         />
       ) : null}
       <UpdatePrompt />
     </ErrorBoundary>
   );
+}
+
+function describeConfirmAction(action: ConfirmAction): { title: string; message: string; confirmLabel: string } {
+  switch (action.kind) {
+    case 'resync':
+      return {
+        title: `Re-sync ${PLATFORMS_BY_ID[action.id]?.label ?? 'platform'}?`,
+        message: 'This discards the customized version for this platform and follows the master draft again.',
+        confirmLabel: 'Re-sync',
+      };
+    case 'reset':
+      return {
+        title: 'Reset draft?',
+        message: 'This clears the draft, every customized platform version, AI sources, and the attached image. It cannot be undone.',
+        confirmLabel: 'Reset',
+      };
+    case 'replace':
+      return {
+        title: 'Replace draft with imported file?',
+        message: 'The imported document replaces your current draft and customized platform versions. It cannot be undone.',
+        confirmLabel: 'Replace',
+      };
+    case 'restore':
+      return {
+        title: `Restore "${action.draft.title}"?`,
+        message: 'Restoring replaces your current draft, customized platform versions, sources, and attached image. Save the current draft first if you want to keep it.',
+        confirmLabel: 'Restore',
+      };
+  }
 }
 
 function shouldAutoAdapt(config: LlmConfig): boolean {
