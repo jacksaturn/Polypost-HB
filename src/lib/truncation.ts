@@ -40,7 +40,9 @@ function countApproximateLines(text: string, approximateCharactersPerLine: numbe
 // when nothing is hidden.
 export function collapseToPreview(text: string, config: TruncationConfig): string {
   const normalized = text.replace(/\r\n?/g, '\n');
-  const chars = Array.from(normalized);
+  // Grapheme clusters, not code points: a cut between the halves of a flag or
+  // inside a ZWJ sequence would leave a dangling half-emoji before the "…".
+  const chars = graphemeClusters(normalized);
 
   let lines = 0;
   let column = 0;
@@ -55,19 +57,26 @@ export function collapseToPreview(text: string, config: TruncationConfig): strin
     if (chars[i] === '\n') {
       lines += 1;
       column = 0;
+
+      if (lines >= config.visibleLines) {
+        // Keep the newline so the cut-on-newline handling below applies.
+        cut = i + 1;
+        break;
+      }
     } else {
       column += 1;
 
       if (column > config.approximateCharactersPerLine) {
-        // This character wrapped onto a new visual line.
+        // This character wrapped onto a new visual line; when that line is the
+        // first hidden one, the character itself is hidden too — cut before it.
         lines += 1;
         column = 1;
-      }
-    }
 
-    if (lines >= config.visibleLines) {
-      cut = i + 1;
-      break;
+        if (lines >= config.visibleLines) {
+          cut = i;
+          break;
+        }
+      }
     }
   }
 
@@ -87,4 +96,17 @@ export function collapseToPreview(text: string, config: TruncationConfig): strin
   }
 
   return `${slice}…`;
+}
+
+const graphemeSegmenter =
+  typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : null;
+
+function graphemeClusters(text: string): string[] {
+  if (!graphemeSegmenter) {
+    return Array.from(text);
+  }
+
+  return Array.from(graphemeSegmenter.segment(text), (segment) => segment.segment);
 }
