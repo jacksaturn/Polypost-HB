@@ -108,7 +108,14 @@ function App() {
   useEffect(() => {
     aiVersionsRef.current = aiVersions;
   }, [aiVersions]);
+  // Latest workspace for async completions: AI results are applied only if the
+  // content they were generated from is still what is on screen.
+  const workspaceRef = useRef(workspace);
+  useEffect(() => {
+    workspaceRef.current = workspace;
+  }, [workspace]);
   const fitAbortRef = useRef<AbortController | null>(null);
+  const authorAbortRef = useRef<AbortController | null>(null);
   // Link preview states whose fetch has already been kicked off, so failed or
   // low-value metadata can retry once without looping forever.
   const startedPreviewKeys = useRef<Set<string>>(new Set());
@@ -297,12 +304,15 @@ function App() {
     }
 
     if (selection.toFit.length === 0) {
+      // The abort above orphaned any badges the superseded run was showing.
+      setGenerating((prev) => (prev.size ? new Set<PlatformId>() : prev));
       return;
     }
 
     const masterText = docToPlainText(workspace.master);
     const masterMarkdown = docToMarkdown(workspace.master);
-    setGenerating((prev) => new Set([...prev, ...selection.toFit]));
+    // Replace rather than merge: aborting the previous run orphaned its badges.
+    setGenerating(new Set(selection.toFit));
     setAiError(null);
 
     await Promise.all(
@@ -324,11 +334,14 @@ function App() {
             setAiError(`${spec.label}: ${error instanceof Error ? error.message : 'AI request failed.'}`);
           }
         } finally {
-          setGenerating((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-          });
+          // An aborted run's badges belong to whichever run superseded it.
+          if (!controller.signal.aborted) {
+            setGenerating((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          }
         }
       }),
     );
@@ -341,25 +354,51 @@ function App() {
       return;
     }
 
-    setGenerating((prev) => new Set(prev).add(id));
+    // Manual fit and auto-adapt both write aiVersions; starting one supersedes
+    // whatever the other had in flight (and takes over the badges).
+    fitAbortRef.current?.abort();
+    const controller = new AbortController();
+    fitAbortRef.current = controller;
+
+    const masterAtRequest = workspace.master;
+    const overrideAtRequest = workspace.overrides[id];
+
+    setGenerating(new Set([id]));
     setAiError(null);
 
     try {
       const masterText = spec.allowUnicodeStyling ? docToMarkdown(workspace.master) : docToPlainText(workspace.master);
-      const result = await generateFit({ config: llmConfig, spec, masterText, style: llmConfig.stylePrompt });
+      const result = await generateFit({ config: llmConfig, spec, masterText, style: llmConfig.stylePrompt, signal: controller.signal });
+
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      // Drop the result if the user edited the master or this platform's pane
+      // while the request ran — applying it would discard their newer work.
+      const current = workspaceRef.current;
+
+      if (current.master !== masterAtRequest || current.overrides[id] !== overrideAtRequest) {
+        return;
+      }
+
       // The sparkle only appears on a forked (edited) card, so applying the AI
       // version means discarding the manual edit: drop the override so the AI
       // version (which would otherwise be hidden behind it) becomes visible.
       setWorkspace((prev) => resyncPlatform(prev, id));
       setAiVersions((prev) => new Map(prev).set(id, result.doc));
     } catch (error) {
-      setAiError(`${spec.label}: ${error instanceof Error ? error.message : 'AI request failed.'}`);
+      if (!controller.signal.aborted) {
+        setAiError(`${spec.label}: ${error instanceof Error ? error.message : 'AI request failed.'}`);
+      }
     } finally {
-      setGenerating((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      if (!controller.signal.aborted) {
+        setGenerating((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     }
   }
 
@@ -368,21 +407,43 @@ function App() {
       return;
     }
 
+    authorAbortRef.current?.abort();
+    const controller = new AbortController();
+    authorAbortRef.current = controller;
+
+    const masterAtRequest = workspace.master;
+
     setAuthorBusy(true);
     setAuthorError(null);
 
     try {
       const { system, prompt } = buildAuthorRequest(instruction, docToMarkdown(workspace.master), llmConfig.stylePrompt, buildSourcesBlock(sources));
-      const text = await generateText({ config: llmConfig, system, prompt });
+      const text = await generateText({ config: llmConfig, system, prompt, signal: controller.signal });
+
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      // The reply replaces the whole master; if the user typed while the
+      // request ran, keep their words instead of silently destroying them.
+      if (workspaceRef.current.master !== masterAtRequest) {
+        setAuthorError('The draft changed while the AI was writing, so its result was not applied. Submit again to rerun on the latest draft.');
+        return;
+      }
+
       const doc = markdownToTipTap(text);
       setWorkspace((prev) => applyMasterEdit(prev, doc));
       setAiVersions(new Map()); // master replaced — drop stale AI versions
       setEditorVersion((version) => version + 1);
       setMasterVersion((version) => version + 1);
     } catch (error) {
-      setAuthorError(error instanceof Error ? error.message : 'AI request failed.');
+      if (!controller.signal.aborted) {
+        setAuthorError(error instanceof Error ? error.message : 'AI request failed.');
+      }
     } finally {
-      setAuthorBusy(false);
+      if (authorAbortRef.current === controller) {
+        setAuthorBusy(false);
+      }
     }
   }
 
