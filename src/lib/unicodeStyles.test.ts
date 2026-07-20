@@ -37,4 +37,20 @@ describe('styleText', () => {
   it('preserves emoji when applying combining styles', () => {
     expect(styleText('Ship 🚀 now', { underline: true, strike: true })).toBe('S̶̲h̶̲i̶̲p̶̲ 🚀 n̶̲o̶̲w̶̲');
   });
+
+  it('leaves ZWJ emoji sequences intact when striking through', () => {
+    // No U+0336 may be inserted anywhere inside the family sequence.
+    expect(applyStrikethrough('👨‍👩‍👧')).toBe('👨‍👩‍👧');
+    expect(applyStrikethrough('a 👨‍👩‍👧 b')).toBe('a̶ 👨‍👩‍👧 b̶');
+  });
+
+  it('leaves keycap sequences intact when underlining', () => {
+    expect(applyUnderline('1️⃣')).toBe('1️⃣');
+    expect(applyUnderline('go 1️⃣ go')).toBe('g̲o̲ 1️⃣ g̲o̲');
+  });
+
+  it('leaves flags and skin-tone emoji intact when striking through', () => {
+    expect(applyStrikethrough('🇺🇸')).toBe('🇺🇸');
+    expect(applyStrikethrough('👍🏽')).toBe('👍🏽');
+  });
 });
