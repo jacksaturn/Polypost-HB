@@ -95,13 +95,30 @@ export function applyUnderline(text: string): string {
 
 function styleSegment(text: string, options: UnicodeStyleOptions): string {
   const variant = getVariant(options);
-  let mapped = variant ? Array.from(text).map((character) => mapAsciiCharacter(character, variant)).join('') : text;
+  let mapped = variant ? mapVariant(text, variant) : text;
 
   if (options.underline) {
     mapped = applyUnderline(mapped);
   }
 
   return options.strike ? applyStrikethrough(mapped) : mapped;
+}
+
+// Maps ASCII letters/digits to the styled variant per grapheme cluster, so an
+// emoji cluster's components are never restyled — mapping the base digit of a
+// keycap like 1(VS16)(U+20E3) to a mathematical bold digit shatters the emoji.
+function mapVariant(text: string, variant: UnicodeVariant): string {
+  const clusters = markSegmenter ? Array.from(markSegmenter.segment(text), (segment) => segment.segment) : Array.from(text);
+
+  return clusters
+    .map((cluster) => {
+      if (EMOJI_CLUSTER_PATTERN.test(cluster)) {
+        return cluster;
+      }
+
+      return Array.from(cluster).map((character) => mapAsciiCharacter(character, variant)).join('');
+    })
+    .join('');
 }
 
 // Works per grapheme cluster: emoji clusters (ZWJ families, keycaps, flags,

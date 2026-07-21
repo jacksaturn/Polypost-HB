@@ -53,4 +53,12 @@ describe('styleText', () => {
     expect(applyStrikethrough('🇺🇸')).toBe('🇺🇸');
     expect(applyStrikethrough('👍🏽')).toBe('👍🏽');
   });
+
+  it('leaves keycap and flag emoji intact when bolding', () => {
+    // Mapping the base digit of 1️⃣ to a mathematical bold digit shatters the keycap.
+    expect(styleText('1️⃣', { bold: true })).toBe('1️⃣');
+    expect(styleText('top 1️⃣ pick', { bold: true })).toBe('𝘁𝗼𝗽 1️⃣ 𝗽𝗶𝗰𝗸');
+    expect(styleText('🇺🇸 usa', { bold: true })).toBe('🇺🇸 𝘂𝘀𝗮');
+    expect(styleText('#️⃣ tag', { code: true })).toBe('#️⃣ 𝚝𝚊𝚐');
+  });
 });

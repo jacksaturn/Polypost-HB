@@ -67,4 +67,17 @@ describe('collapseToPreview', () => {
     expect(isTextTruncated(overflows, config)).toBe(true);
     expect(collapseToPreview(overflows, config)).not.toBe(overflows);
   });
+
+  it('agrees with isTextTruncated for emoji-heavy text', () => {
+    // 100 family emoji = 100 graphemes (fits) but 500 code points; measuring
+    // the two functions in different units rendered a dead "…more" toggle.
+    const emojiHeavy = '👨‍👩‍👧'.repeat(100);
+
+    expect(isTextTruncated(emojiHeavy, config)).toBe(false);
+    expect(collapseToPreview(emojiHeavy, config)).toBe(emojiHeavy);
+
+    const emojiOverflow = '👨‍👩‍👧'.repeat(211);
+    expect(isTextTruncated(emojiOverflow, config)).toBe(true);
+    expect(collapseToPreview(emojiOverflow, config)).not.toBe(emojiOverflow);
+  });
 });

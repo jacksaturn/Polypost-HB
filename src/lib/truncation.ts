@@ -16,9 +16,12 @@ export function isTextTruncated(text: string, config: TruncationConfig): boolean
     return false;
   }
 
+  // Grapheme clusters, matching collapseToPreview — measuring here in code
+  // points would claim emoji-heavy text is truncated while the collapse
+  // returns it whole, rendering a "…more" toggle that does nothing.
   return (
     countApproximateLines(normalized, config.approximateCharactersPerLine) > config.visibleLines ||
-    Array.from(normalized).length > config.approximateCharacters
+    graphemeClusters(normalized).length > config.approximateCharacters
   );
 }
 
@@ -28,7 +31,7 @@ function countApproximateLines(text: string, approximateCharactersPerLine: numbe
       return lineCount + 1;
     }
 
-    return lineCount + Math.max(1, Math.ceil(Array.from(line).length / approximateCharactersPerLine));
+    return lineCount + Math.max(1, Math.ceil(graphemeClusters(line).length / approximateCharactersPerLine));
   }, 0);
 }
 
