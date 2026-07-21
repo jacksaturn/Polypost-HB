@@ -2,7 +2,7 @@ import type { PlatformSpec } from './types';
 
 export const mastodonSpec: PlatformSpec = {
   id: 'mastodon',
-  label: 'Mastodon',
+  label: 'High Bias',
   brandColor: '#6364ff',
   // 500 is the default; individual instances can raise or lower it.
   charLimit: 500,
@@ -14,10 +14,12 @@ export const mastodonSpec: PlatformSpec = {
   truncation: null,
   truncationLabel: '',
   capabilities: {
-    // Copy only: Mastodon is federated, so there is no universal compose/intent URL
-    // (it would need the user's home-instance domain).
     copy: true,
     imageAttachments: true,
+    openComposer: {
+      url: (text) => `https://highbias.org/share?text=${encodeURIComponent(text)}`,
+      prefillsText: true,
+    },
   },
   warnings: [],
   // Mastodon renders a compact card: small thumbnail on the left, title,
