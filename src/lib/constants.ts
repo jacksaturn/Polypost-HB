@@ -1,4 +1,4 @@
-export const APP_NAME = 'Polypost';
+export const APP_NAME = 'Polypost @ High Bias';
 
 export const LINKEDIN_POST_CHARACTER_LIMIT = 3000;
 export const LINKEDIN_POST_WARNING_THRESHOLD = 2800;
