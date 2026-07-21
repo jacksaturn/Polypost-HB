@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { AlertTriangle, FileText, Globe, Loader, Plus, Type, X } from 'lucide-react';
 
 import { getAcceptedDocumentTypes } from '../lib/importDocument';
+import {
+  makeDocumentSource,
+  makeTextSource,
+  withPastedText,
+  type Source,
+} from '../lib/ai/sources';
 import { SourcePreview } from './SourcePreview';
 
 interface SourcesPanelProps {
