@@ -1,7 +1,6 @@
 import { ExternalLink, X } from 'lucide-react';
 
 import { useEscape } from '../lib/useEscape';
-import type { Source } from '../lib/ai/sources';
 
 interface SourcePreviewProps {
   source: Source;
