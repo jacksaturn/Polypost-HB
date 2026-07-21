@@ -20,17 +20,6 @@ vi.mock('./components/EditorShell', () => ({
   ),
 }));
 
-vi.mock('./lib/ai/fit', () => ({
-  generateFit: vi.fn(async () => ({
-    doc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Adapted' }] }] },
-    text: 'Adapted',
-    count: 7,
-    withinLimit: true,
-    attempts: 1,
-  })),
-}));
-
-import { generateFit } from './lib/ai/fit';
 import App from './App';
 
 function saveAiSettings(stylePrompt = '') {
