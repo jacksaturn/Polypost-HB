@@ -79,6 +79,15 @@ describe('countCharacters', () => {
       expect(countCharacters('e.g. this', 'x-weighted')).toBe(9);
     });
 
+    it('keeps dotted tech tokens with non-TLD extensions literal', () => {
+      expect(countCharacters('I love Node.js', 'x-weighted')).toBe(14);
+      expect(countCharacters('open file.txt now', 'x-weighted')).toBe(17);
+      expect(countCharacters('edit package.json', 'x-weighted')).toBe(17);
+      expect(countCharacters('see README.md', 'x-weighted')).toBe(13);
+      // ...while real bare domains still weigh 23: "try " (4) + 23 = 27.
+      expect(countCharacters('try aka.ms/Polypost', 'x-weighted')).toBe(27);
+    });
+
     it('weighs every emoji grapheme as 2 regardless of its code points', () => {
       expect(countCharacters('🚀', 'x-weighted')).toBe(2);
       expect(countCharacters('👨‍👩‍👧', 'x-weighted')).toBe(2); // ZWJ family

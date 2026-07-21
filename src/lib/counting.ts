@@ -21,6 +21,30 @@ const URL_WEIGHT = 23;
 const BARE_DOMAIN_PATTERN =
   /(?<![\w@./-])(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}\b(?:\/(?:(?:\([^\s()]*\)|[^\s()])*(?:\([^\s()]*\)|[^\s.,!?;:)\]}'"»›]))?)?/giu;
 
+// Shape alone over-counts badly for a tech audience: Node.js, file.txt, and
+// package.json all look like domains. X validates against the full IANA TLD
+// list; this trades that for a curated set of TLDs people actually post bare
+// (an uncommon-TLD bare domain falls back to literal counting, the same
+// behavior every bare domain had before this matcher existed). Deliberately
+// omits TLDs that collide with everyday file extensions (.md, .py, .rs, .zip).
+const BARE_DOMAIN_TLDS = new Set([
+  'com', 'net', 'org', 'edu', 'gov', 'mil', 'int',
+  'io', 'co', 'ai', 'app', 'dev', 'me', 'tv', 'gg', 'ms', 'fm', 'am', 'ly', 'sh', 'so', 'to', 'gl', 'is', 'be',
+  'xyz', 'info', 'biz', 'pro', 'top', 'vip', 'icu', 'one', 'fyi', 'wiki', 'club', 'shop', 'store', 'blog',
+  'news', 'site', 'online', 'space', 'website', 'tech', 'cloud', 'social', 'network', 'systems', 'tools',
+  'codes', 'design', 'studio', 'agency', 'digital', 'media', 'email', 'live', 'life', 'world', 'today',
+  'zone', 'link', 'page', 'art', 'fun', 'win', 'red', 'blue', 'green', 'work',
+  'us', 'uk', 'ca', 'de', 'fr', 'jp', 'cn', 'in', 'au', 'br', 'ru', 'es', 'it', 'nl', 'se', 'no', 'fi',
+  'dk', 'pl', 'pt', 'ch', 'at', 'ie', 'nz', 'za', 'kr', 'tw', 'hk', 'sg', 'mx', 'ar', 'cl', 'eu', 'cz',
+  'gr', 'hu', 'ro', 'sk', 'ua', 'il', 'tr', 'sa', 'ae', 'id', 'th', 'vn', 'ph', 'my',
+]);
+
+// The TLD of a bare-domain match (the last dotted label before any path).
+function bareDomainTld(match: string): string {
+  const domain = match.split('/', 1)[0];
+  return domain.slice(domain.lastIndexOf('.') + 1).toLowerCase();
+}
+
 // A grapheme cluster renders as emoji when it contains a pictographic or
 // emoji-presentation code point, or emoji plumbing (VS16, combining keycap,
 // regional indicators, skin-tone modifiers).
@@ -105,6 +129,10 @@ function urlTokenRanges(normalized: string): TokenRange[] {
   }
 
   for (const match of normalized.matchAll(BARE_DOMAIN_PATTERN)) {
+    if (!BARE_DOMAIN_TLDS.has(bareDomainTld(match[0]))) {
+      continue;
+    }
+
     const start = match.index;
     const end = start + match[0].length;
 
