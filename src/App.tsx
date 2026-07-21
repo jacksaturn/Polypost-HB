@@ -13,17 +13,10 @@ import { UpdatePrompt } from './components/UpdatePrompt';
 import { PlatformRail } from './components/PlatformRail';
 import { PlatformToggleChips } from './components/PlatformToggleChips';
 import { loadTheme, saveTheme, type Theme } from './lib/theme';
-import { selectAutofit } from './lib/ai/autofit';
-import { isLlmReady, loadLlmConfig, saveLlmConfig, type LlmConfig } from './lib/ai/config';
-import { docToMarkdown, docToPlainText } from './lib/ai/docText';
-import { buildSourcesBlock, loadSources, saveSources, type Source } from './lib/ai/sources';
 import { markdownToTipTap } from './lib/markdownToTipTap';
 import { fetchLinkPreview, lastUrlInText, shouldRefreshLinkPreview } from './lib/linkPreview';
 import { restoreDraftAttachments, revokeAttachment, serializeAttachmentsForDraft, type Attachment, type LinkPreview } from './lib/media';
 import { clearActiveAttachment, loadActiveAttachment, putActiveAttachment } from './lib/attachmentStore';
-import { generateFit } from './lib/ai/fit';
-import { generateText } from './lib/ai/llmClient';
-import { buildAuthorRequest } from './lib/ai/prompts';
 import { APP_NAME } from './lib/constants';
 import type { EditorNode } from './lib/exportText';
 import {
