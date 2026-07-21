@@ -8,7 +8,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { HelpModal } from './components/HelpModal';
 import { ImageAttachmentControl } from './components/ImageAttachmentControl';
 import { InstallButton } from './components/InstallButton';
-import { LlmSettings } from './components/LlmSettings';
 import { PolypostMark } from './components/PolypostMark';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { PlatformRail } from './components/PlatformRail';
@@ -828,7 +827,6 @@ function App() {
           />
         </section>
       </main>
-      {showSettings ? <LlmSettings config={llmConfig} onSave={handleSaveSettings} onClose={() => setShowSettings(false)} /> : null}
       {showHelp ? <HelpModal onClose={() => setShowHelp(false)} /> : null}
       {confirmAction ? (
         <ConfirmDialog
