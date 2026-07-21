@@ -23,7 +23,7 @@ export const PLATFORMS: PlatformSpec[] = [
 ];
 
 // New users see these enabled; migrated users keep just LinkedIn (see storage).
-export const DEFAULT_ENABLED_PLATFORMS: PlatformId[] = ['linkedin', 'x', 'bluesky'];
+export const DEFAULT_ENABLED_PLATFORMS: PlatformId[] = ['mastodon', 'bluesky', 'instagram', 'facebook'];
 
 export const PLATFORMS_BY_ID = Object.fromEntries(
   PLATFORMS.map((spec) => [spec.id, spec]),
