@@ -26,29 +26,6 @@ export function HelpContent({ webApp = false }: { webApp?: boolean }) {
       </section>
 
       <section className="help-section">
-        <h3>AI assistant (optional)</h3>
-        <ul className="help-list">
-          <li>
-            Open the gear icon to connect an LLM endpoint — Anthropic (Claude), Google Gemini, or any OpenAI-compatible
-            endpoint that allows browser/CORS requests. Use Test connection to verify it works. Your API key is stored
-            only in this browser.
-          </li>
-          <li>Ask the AI to write or improve the main draft from the bar above the editor.</li>
-          <li>
-            Give the AI material to use as its context with \"Reference sources for AI\": add a .txt/.md/.docx file or
-            pasted text. Sources are context only — they're never posted.
-          </li>
-          <li>Use "Adapt with AI" on a card to rewrite the post for that platform on demand.</li>
-          <li>
-            With auto-fit on, any platform over its limit is rewritten automatically about 3 seconds after you stop
-            typing (shown with an AI badge; re-sync drops it). Fitted versions are re-checked against the limit and
-            regenerated if still too long.
-          </li>
-          <li>Add Style guidance in settings to steer the voice (e.g. "keep it light-hearted with a bit of humor").</li>
-        </ul>
-      </section>
-
-      <section className="help-section">
         <h3>Per-platform formatting</h3>
         <ul className="help-list">
           <li>
@@ -142,7 +119,7 @@ export function HelpContent({ webApp = false }: { webApp?: boolean }) {
             </li>
             <li>
               Works offline: once it has loaded, you can open Polypost and write, edit, and manage drafts with no
-              connection. AI assistance and link previews need the network, so they're unavailable offline.
+              connection.
             </li>
             <li>
               Stays up to date: when a new version is published, a "new version available" prompt appears — reload to
