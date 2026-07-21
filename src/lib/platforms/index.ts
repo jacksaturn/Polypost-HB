@@ -13,13 +13,13 @@ import type { PlatformId, PlatformRender, PlatformSpec } from './types';
 
 // Order here is the display order in the chip row and preview rail.
 export const PLATFORMS: PlatformSpec[] = [
+  mastodonSpec,
+  blueskySpec,
+  instagramSpec,
+  facebookSpec,
+  threadsSpec,
   linkedinSpec,
   xSpec,
-  blueskySpec,
-  threadsSpec,
-  mastodonSpec,
-  facebookSpec,
-  instagramSpec,
 ];
 
 // New users see these enabled; migrated users keep just LinkedIn (see storage).
